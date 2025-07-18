@@ -1,14 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
 import axios, { AxiosRequestConfig } from 'axios';
+import { Repository } from 'typeorm';
 import { BulkCreateEventDto, CreateEventDto } from './dto/create-event.dto';
+import { EventLog } from './entities/event-log.entity';
 
 @Injectable()
 export class EventService {
   private readonly klaviyoBaseUrl: string;
   private readonly klaviyoApiKey: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+
+    @InjectRepository(EventLog)
+    private readonly eventLogRepo: Repository<EventLog>,
+  ) {
     this.klaviyoApiKey = this.configService.get<string>(
       'KLAVIYO_PRIVATE_API_KEY',
     )!;
@@ -53,6 +61,10 @@ export class EventService {
       const response = await axios.request(options);
 
       if (response) {
+        await this.eventLogRepo.save({
+          raw_payload: JSON.stringify(paylaod),
+        });
+
         return {
           success: true,
           message: 'Event created successfully',
