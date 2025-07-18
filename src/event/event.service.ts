@@ -146,4 +146,45 @@ export class EventService {
       };
     }
   }
+
+  async getProfileByEmail(email: string) {
+    const url = `${this.klaviyoBaseUrl}/api/profiles/`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          accept: 'application/vnd.api+json',
+          revision: '2023-10-15',
+          Authorization: `Klaviyo-API-Key ${this.klaviyoApiKey}`,
+        },
+        params: {
+          filter: `equals(email,"${email}")`,
+        },
+      });
+
+      const profiles = response.data?.data || [];
+
+      if (profiles.length === 0) {
+        return {
+          success: false,
+          message: 'No profile found for the provided email',
+        };
+      }
+
+      return {
+        success: true,
+        profile: profiles[0],
+      };
+    } catch (error) {
+      console.error(
+        'Error fetching profile:',
+        error.response?.data || error.message,
+      );
+      return {
+        success: false,
+        message: 'Failed to fetch profile',
+        error: error.response?.data || error.message,
+      };
+    }
+  }
 }

@@ -1,5 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { BulkCreateEventDto, CreateEventDto } from './dto/create-event.dto';
 import { EventService } from './event.service';
 
@@ -18,5 +18,12 @@ export class EventController {
   @ApiOperation({ summary: 'Create multiple events and send to Klaviyo' })
   bulkCreate(@Body() dto: BulkCreateEventDto) {
     return this.eventService.createbulkEvents(dto);
+  }
+
+  @Get('profile')
+  @ApiOperation({ summary: 'Get Klaviyo profile attributes by email' })
+  @ApiQuery({ name: 'email', required: true, type: String })
+  getProfileByEmail(@Query('email') email: string) {
+    return this.eventService.getProfileByEmail(email);
   }
 }
