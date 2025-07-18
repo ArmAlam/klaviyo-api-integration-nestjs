@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class MetricsService {
@@ -44,6 +45,45 @@ export class MetricsService {
         success: false,
         message: 'Failed to fetch metrics',
         error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async getEventCountByMetricAndDate(metricId: string, date: string) {
+    const startDate = dayjs(date).startOf('day').toISOString();
+    const endDate = dayjs(date).endOf('day').toISOString();
+
+    const url = `${this.klaviyoBaseUrl}/api/metrics/${metricId}/timeline/`;
+
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          accept: 'application/json',
+          revision: '2023-10-15',
+          Authorization: `Klaviyo-API-Key ${this.klaviyoApiKey}`,
+        },
+        params: {
+          start_date: startDate,
+          end_date: endDate,
+        },
+      });
+
+      const events = response.data?.data || [];
+      return {
+        success: true,
+        date,
+        metric_id: metricId,
+        count: events.length,
+      };
+    } catch (error) {
+      console.error(
+        'Error fetching event count:',
+        error.response?.data || error.message,
+      );
+      return {
+        success: false,
+        message: 'Failed to fetch event count',
+        error: error.response?.data || error.message,
       };
     }
   }
