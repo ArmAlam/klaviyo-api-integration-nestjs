@@ -111,7 +111,7 @@ export class EventService {
                             },
                           },
                         },
-                        unique_id: 'evt_' + Date.now(),
+                        unique_id: 'evt_' + Date.now(), //TODO: Generate unique ID
                       },
                     },
                   ],
