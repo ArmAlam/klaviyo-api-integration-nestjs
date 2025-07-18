@@ -27,22 +27,4 @@ export class MetricsController {
   ) {
     return this.metricsService.getEventCountByMetricAndDate(metricId, date);
   }
-
-  @Get('emails')
-  @ApiOperation({
-    summary: 'Get list of emails by metric ID for a specific date',
-  })
-  @ApiQuery({ name: 'metric_id', required: true, type: String })
-  @ApiQuery({
-    name: 'date',
-    required: true,
-    type: String,
-    description: 'Format: YYYY-MM-DD',
-  })
-  getEmailsByMetricAndDate(
-    @Query('metric_id') metricId: string,
-    @Query('date') date: string,
-  ) {
-    return this.metricsService.getEmailsByMetricAndDate(metricId, date);
-  }
 }

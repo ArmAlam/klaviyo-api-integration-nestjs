@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import axios, { AxiosRequestConfig } from 'axios';
+import { handleKlaviyoError } from 'src/utils/klaviyoErrorHandler';
 import { Repository } from 'typeorm';
 import { BulkCreateEventDto, CreateEventDto } from './dto/create-event.dto';
 import { EventLog } from './entities/event-log.entity';
@@ -72,12 +73,7 @@ export class EventService {
         };
       }
     } catch (error) {
-      console.error('Error creating event:', error);
-      return {
-        success: false,
-        message: 'Failed to create event',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+      handleKlaviyoError(error);
     }
   }
 
@@ -147,15 +143,7 @@ export class EventService {
         data: response.data,
       };
     } catch (error) {
-      console.error(
-        'Klaviyo Bulk Event Error:',
-        error.response?.data || error.message,
-      );
-      return {
-        success: false,
-        message: 'Bulk event creation failed',
-        error: error.response?.data || error.message,
-      };
+      handleKlaviyoError(error);
     }
   }
 
@@ -188,15 +176,7 @@ export class EventService {
         profile: profiles[0],
       };
     } catch (error) {
-      console.error(
-        'Error fetching profile:',
-        error.response?.data || error.message,
-      );
-      return {
-        success: false,
-        message: 'Failed to fetch profile',
-        error: error.response?.data || error.message,
-      };
+      handleKlaviyoError(error);
     }
   }
 }

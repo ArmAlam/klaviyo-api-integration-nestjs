@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
 import dayjs from 'dayjs';
+import { handleKlaviyoError } from 'src/utils/klaviyoErrorHandler';
 
 @Injectable()
 export class MetricsService {
@@ -41,11 +42,7 @@ export class MetricsService {
         };
       }
     } catch (error) {
-      return {
-        success: false,
-        message: 'Failed to fetch metrics',
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
+      handleKlaviyoError(error);
     }
   }
 
@@ -53,7 +50,7 @@ export class MetricsService {
     const startDate = dayjs(date).startOf('day').toISOString();
     const endDate = dayjs(date).endOf('day').toISOString();
 
-    const url = `${this.klaviyoBaseUrl}/api/metrics/${metricId}/timeline/`;
+    const url = `${this.klaviyoBaseUrl}/api/events/filter=equals(metric_id,"${metricId}")&filter=greater-or-equal(created,"${startDate}")&filter=less-than(created,"${endDate}")`;
 
     try {
       const response = await axios.get(url, {
@@ -76,61 +73,7 @@ export class MetricsService {
         count: events.length,
       };
     } catch (error) {
-      console.error(
-        'Error fetching event count:',
-        error.response?.data || error.message,
-      );
-      return {
-        success: false,
-        message: 'Failed to fetch event count',
-        error: error.response?.data || error.message,
-      };
-    }
-  }
-
-  async getEmailsByMetricAndDate(metricId: string, date: string) {
-    const startDate = dayjs(date).startOf('day').toISOString();
-    const endDate = dayjs(date).endOf('day').toISOString();
-
-    const url = `${this.klaviyoBaseUrl}/api/metrics/${metricId}/timeline/`;
-
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          accept: 'application/vnd.api+json',
-          revision: '2023-10-15',
-          Authorization: `Klaviyo-API-Key ${this.klaviyoApiKey}`,
-        },
-        params: {
-          start_date: startDate,
-          end_date: endDate,
-        },
-      });
-
-      const events = response.data?.data || [];
-
-      // Extract emails from each event’s profile
-      const emails = events
-        .map((event) => event.attributes?.profile?.email)
-        .filter((email) => !!email);
-
-      return {
-        success: true,
-        metric_id: metricId,
-        date,
-        count: emails.length,
-        emails,
-      };
-    } catch (error) {
-      console.error(
-        'Error fetching emails by metric and date:',
-        error.response?.data || error.message,
-      );
-      return {
-        success: false,
-        message: 'Failed to fetch emails',
-        error: error.response?.data || error.message,
-      };
+      handleKlaviyoError(error);
     }
   }
 }
