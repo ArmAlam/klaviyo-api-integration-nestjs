@@ -62,3 +62,8 @@ export class CreateEventDto {
   })
   profile_attributes: Record<string, any>;
 }
+
+export class BulkCreateEventDto {
+  @ApiProperty({ type: [CreateEventDto] })
+  events: CreateEventDto[];
+}

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosRequestConfig } from 'axios';
-import { CreateEventDto } from './dto/create-event.dto';
+import { BulkCreateEventDto, CreateEventDto } from './dto/create-event.dto';
 
 @Injectable()
 export class EventService {
@@ -23,7 +23,7 @@ export class EventService {
       data: {
         type: 'event',
         attributes: {
-          properties: dto.event_attributes || {},
+          properties: dto.event_attributes,
           metric: {
             data: {
               type: 'metric',
@@ -32,19 +32,7 @@ export class EventService {
               },
             },
           },
-          profile: {
-            data: {
-              type: 'profile',
-              attributes: {
-                ...dto.profile_attributes,
-                meta: dto.profile_attributes?.meta,
-                properties: dto.profile_attributes?.properties,
-                location: dto.profile_attributes?.location,
-              },
-              id: dto.profile_attributes?.external_id || 'auto_' + Date.now(),
-            },
-          },
-          unique_id: 'evt_' + Date.now(),
+          profile: dto.profile_attributes,
         },
       },
     };
@@ -77,6 +65,84 @@ export class EventService {
         success: false,
         message: 'Failed to create event',
         error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  async createbulkEvents(dto: BulkCreateEventDto) {
+    const payload = {
+      data: {
+        type: 'event-bulk-create-job',
+        attributes: {
+          'events-bulk-create': {
+            data: dto.events.map((event) => ({
+              type: 'event-bulk-create',
+              attributes: {
+                profile: {
+                  data: {
+                    type: 'profile',
+                    attributes: event.profile_attributes,
+                    id:
+                      event.profile_attributes.external_id ||
+                      'auto_' + Date.now(),
+                    meta: event.profile_attributes.meta,
+                  },
+                },
+                events: {
+                  data: [
+                    {
+                      type: 'event',
+                      attributes: {
+                        properties: event.event_attributes,
+                        metric: {
+                          data: {
+                            type: 'metric',
+                            attributes: {
+                              name: event.event_name,
+                              service: 'custom',
+                            },
+                          },
+                        },
+                        unique_id: 'evt_' + Date.now(),
+                      },
+                    },
+                  ],
+                },
+              },
+            })),
+          },
+        },
+      },
+    };
+
+    try {
+      const options: AxiosRequestConfig = {
+        method: 'POST',
+        url: `${this.klaviyoBaseUrl}/api/events/bulk-create-jobs/`,
+        headers: {
+          accept: 'application/vnd.api+json',
+          revision: '2025-07-15',
+          'content-type': 'application/vnd.api+json',
+          Authorization: `Klaviyo-API-Key ${this.klaviyoApiKey}`,
+        },
+        data: payload,
+      };
+
+      const response = await axios.request(options);
+      return {
+        success: true,
+        message: 'Bulk event creation submitted successfully',
+        data: response.data,
+      };
+    } catch (error) {
+      console.error(
+        'Klaviyo Bulk Event Error:',
+        error.response?.data || error.message,
+      );
+      return {
+        success: false,
+        message: 'Bulk event creation failed',
+        error: error.response?.data || error.message,
       };
     }
   }
